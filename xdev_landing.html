@@ -16,25 +16,15 @@
             background: #0a0a0a;
             color: #ffffff;
             overflow-x: hidden;
-            cursor: none;
         }
 
-        /* 自定义光标 */
+        /* 移除自定义光标相关样式 */
         .cursor {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #00ffff;
-            border-radius: 50%;
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            transition: all 0.1s ease;
-            mix-blend-mode: difference;
+            display: none;
         }
 
         .cursor.active {
-            transform: scale(2);
-            border-color: #ff00ff;
+            display: none;
         }
 
         /* 星空背景 */
@@ -368,9 +358,6 @@
     </style>
 </head>
 <body>
-    <div class="cursor" id="cursor"></div>
-    
-    <!-- 星空背景 -->
     <div class="starfield" id="starfield"></div>
     
     <!-- 粒子效果 -->
@@ -428,76 +415,74 @@
     </div>
 
     <script>
-        // 自定义光标
-        const cursor = document.getElementById('cursor');
-        let mouseX = 0, mouseY = 0;
-        
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
-        
-        function updateCursor() {
-            cursor.style.left = mouseX + 'px';
-            cursor.style.top = mouseY + 'px';
-            requestAnimationFrame(updateCursor);
-        }
-        updateCursor();
-        
-        // 鼠标悬停效果
-        document.addEventListener('mouseenter', () => {
-            cursor.classList.add('active');
-        });
-        
-        document.addEventListener('mouseleave', () => {
-            cursor.classList.remove('active');
-        });
+        // 移除自定义光标相关代码
+        // 保留鼠标跟踪特效但使用系统光标
 
-        // 创建星空
+        // 创建星空 - 优化性能
         function createStarfield() {
             const starfield = document.getElementById('starfield');
-            const numStars = 200;
+            const numStars = window.innerWidth < 768 ? 100 : 200; // 移动端减少星星数量
             
             for (let i = 0; i < numStars; i++) {
                 const star = document.createElement('div');
                 star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.width = Math.random() * 3 + 1 + 'px';
-                star.style.height = star.style.width;
-                star.style.animationDelay = Math.random() * 3 + 's';
-                star.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                star.style.cssText = `
+                    position: absolute;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    width: ${Math.random() * 3 + 1}px;
+                    height: ${Math.random() * 3 + 1}px;
+                    background: #ffffff;
+                    border-radius: 50%;
+                    animation: twinkle ${Math.random() * 2 + 2}s infinite;
+                    animation-delay: ${Math.random() * 3}s;
+                    will-change: opacity;
+                `;
                 starfield.appendChild(star);
             }
         }
         
-        // 创建粒子效果
+        // 创建粒子效果 - 优化性能
         function createParticles() {
             const particles = document.getElementById('particles');
+            let particleCount = 0;
+            const maxParticles = 20; // 限制粒子数量
             
             function addParticle() {
+                if (particleCount >= maxParticles) return;
+                
                 const particle = document.createElement('div');
                 particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.width = Math.random() * 4 + 2 + 'px';
-                particle.style.height = particle.style.width;
-                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
-                particle.style.animationDelay = Math.random() * 5 + 's';
+                particle.style.cssText = `
+                    position: absolute;
+                    left: ${Math.random() * 100}%;
+                    width: ${Math.random() * 4 + 2}px;
+                    height: ${Math.random() * 4 + 2}px;
+                    border-radius: 50%;
+                    pointer-events: none;
+                    animation: float ${Math.random() * 10 + 15}s infinite linear;
+                    animation-delay: ${Math.random() * 5}s;
+                    will-change: transform;
+                `;
                 
                 // 随机颜色
                 const colors = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
                 particle.style.background = colors[Math.floor(Math.random() * colors.length)];
                 
                 particles.appendChild(particle);
+                particleCount++;
                 
                 // 移除粒子
                 setTimeout(() => {
-                    particle.remove();
+                    if (particle.parentNode) {
+                        particle.remove();
+                        particleCount--;
+                    }
                 }, 25000);
             }
             
-            // 定期添加粒子
-            setInterval(addParticle, 300);
+            // 调整粒子生成频率
+            setInterval(addParticle, 800);
         }
         
         // 平滑滚动
@@ -526,27 +511,37 @@
             }, 100);
         });
         
-        // 鼠标跟踪特效
+        // 鼠标跟踪特效 - 优化性能
+        let lastTrailTime = 0;
         document.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+            // 限制轨迹生成频率，避免过度消耗性能
+            if (now - lastTrailTime < 50) return;
+            lastTrailTime = now;
+            
             const trail = document.createElement('div');
-            trail.style.position = 'fixed';
-            trail.style.left = e.clientX + 'px';
-            trail.style.top = e.clientY + 'px';
-            trail.style.width = '4px';
-            trail.style.height = '4px';
-            trail.style.background = '#00ffff';
-            trail.style.borderRadius = '50%';
-            trail.style.pointerEvents = 'none';
-            trail.style.zIndex = '9998';
-            trail.style.opacity = '0.7';
-            trail.style.transition = 'all 0.5s ease-out';
+            trail.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                width: 4px;
+                height: 4px;
+                background: #00ffff;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 9998;
+                opacity: 0.7;
+                transition: all 0.5s ease-out;
+                will-change: transform, opacity;
+            `;
             
             document.body.appendChild(trail);
             
-            setTimeout(() => {
+            // 使用 requestAnimationFrame 优化动画
+            requestAnimationFrame(() => {
                 trail.style.opacity = '0';
                 trail.style.transform = 'scale(0)';
-            }, 10);
+            });
             
             setTimeout(() => {
                 trail.remove();
@@ -563,22 +558,40 @@
             }
         });
         
-        // 视差滚动效果
-        window.addEventListener('scroll', () => {
+        // 视差滚动效果 - 优化性能
+        let ticking = false;
+        function updateParallax() {
             const scrolled = window.pageYOffset;
             const parallax = document.querySelector('.starfield');
             const speed = scrolled * 0.5;
             parallax.style.transform = `translateY(${speed}px)`;
+            ticking = false;
+        }
+        
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(updateParallax);
+                ticking = true;
+            }
         });
         
-        // 响应式处理
+        // 响应式处理 - 优化性能
+        let resizeTimeout;
         window.addEventListener('resize', () => {
-            // 重新调整粒子效果
-            if (window.innerWidth < 768) {
-                document.querySelectorAll('.particle').forEach(particle => {
-                    particle.style.animationDuration = '10s';
-                });
-            }
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // 重新调整粒子效果
+                if (window.innerWidth < 768) {
+                    document.querySelectorAll('.particle').forEach(particle => {
+                        particle.style.animationDuration = '10s';
+                    });
+                }
+                
+                // 重新创建星空以适应新的屏幕尺寸
+                const starfield = document.getElementById('starfield');
+                starfield.innerHTML = '';
+                createStarfield();
+            }, 250);
         });
     </script>
 </body>
